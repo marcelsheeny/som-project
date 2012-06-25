@@ -12,7 +12,7 @@ double max (double d1, double d2);
 
 int main (void) {
 
-	IplImage* imgSOM = cvCreateImage(cvSize(100,100),8,3);
+	IplImage* imgSOM = cvCreateImage(cvSize(20,20),8,3);
 	IplImage* imgEntrada = cvLoadImage("imagem.bmp");
 
 	if (imgEntrada != NULL) {
@@ -23,9 +23,9 @@ int main (void) {
 		IplImage* imgSOMResize = mudaTamanho (imgSOM,4.0);
 		cvShowImage("SOM",imgSOMResize);
 		cvWaitKey(0);
-
-		return 0;
 	}
+
+	return 0;
 
 }
 
@@ -33,9 +33,9 @@ void preencheImagemRandomicamente (IplImage* img) {
 	unsigned char* colorData = (unsigned char*)img->imageData;
 	srand ( time(NULL) );
 	for (int i = 0; i < img->width*img->height * img->nChannels; i = i + img->nChannels) {
-			colorData[i] = rand() % 255;
-			colorData[i+1] = rand() % 255;
-			colorData[i+2] = rand() % 255;
+			colorData[i] = rand() % 256;
+			colorData[i+1] = rand() % 256;
+			colorData[i+2] = rand() % 256;
 	}
 }
 IplImage* mudaTamanho (IplImage *imgEntrada, double size) {
@@ -55,15 +55,15 @@ void kohonen (IplImage* som, IplImage* imgEntrada) {
 
 	unsigned char* colorDataEntrada = (unsigned char*)imgEntrada->imageData;
 	unsigned char* colorDataSom = (unsigned char*)som->imageData;
-	int tam = 40;
-	double sigma = 1;
+	int tam = 10;
+	double sigma = tam/5.0;
 	double gaussian = 0;
 
 	CvPoint3D32f color;
 	CvPoint ptVencedor;
 
 
-
+for(int a=0; a<10; a++)
 	for (int i = 0; i < imgEntrada->width*imgEntrada->height * imgEntrada->nChannels; i = i + imgEntrada->nChannels) {
 
 		color.x = colorDataEntrada[i];
@@ -76,27 +76,27 @@ void kohonen (IplImage* som, IplImage* imgEntrada) {
 		for (int y = -tam+ptVencedor.y; y <= tam+ptVencedor.y; y++) {
 			for (int x = -tam+ptVencedor.x; x <= tam+ptVencedor.x; x++) {
 
-				if (x < som->width && x > 0 && y < som->height && y > 0) {
+				if (x < som->width && x >= 0 && y < som->height && y >= 0) {
 					double dx = x-ptVencedor.x;
 					double dy = y-ptVencedor.y;
 
 					gaussian = ((1./(2.*PI*sigma)) * exp(-( ( (dx*dx) + (dy*dy) ) / (2.*sigma))));
 					//printf("%d %d %lf\n", x-ptVencedor.x,y-ptVencedor.y,gaussian);
-					CvPoint3D64f s = cvPoint3D64f( ((double)colorDataSom[x + y*som->widthStep]),( (double) colorDataSom[x+1 + y*som->widthStep]),( (double)colorDataSom[x+2 + y*som->widthStep]) );
+					CvPoint3D64f s = cvPoint3D64f( ((double)colorDataSom[x*3 + y*som->widthStep]),
+												   ((double)colorDataSom[x*3+1 + y*som->widthStep]),
+												   ((double)colorDataSom[x*3+2 + y*som->widthStep]) );
 
-					colorDataSom[x + y*som->widthStep] = (int)(((gaussian)*((double)color.x)) + ((1.-gaussian)*s.x));
-					colorDataSom[x+1 + y*som->widthStep] = (int)( ((gaussian)*((double)color.y)) + ((1.-gaussian)*s.y));
-					colorDataSom[x+2 + y*som->widthStep] = (int)( ((gaussian)*((double)color.z)) + ((1.-gaussian)*s.z));
-
-					
-					
+					colorDataSom[x*3 + y*som->widthStep] = (int)(((gaussian)*((double)color.x)) + ((1.-gaussian)*s.x));
+					colorDataSom[x*3+1 + y*som->widthStep] = (int)( ((gaussian)*((double)color.y)) + ((1.-gaussian)*s.y));
+					colorDataSom[x*3+2 + y*som->widthStep] = (int)( ((gaussian)*((double)color.z)) + ((1.-gaussian)*s.z));
 				}
 			}
 		}
-		//IplImage* imgSOMResize = mudaTamanho (som,4.0);
-		//			cvShowImage("SOM",imgSOMResize);
-		//			cvWaitKey(0);
-		
+		IplImage* imgSOMResize = mudaTamanho (som,4.0);
+				
+		cvShowImage("SOM",imgSOMResize);
+		cvWaitKey(1);
+		cvReleaseImage (&imgSOMResize);
 
 
 	}
